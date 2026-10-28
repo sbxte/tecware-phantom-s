@@ -1,0 +1,22 @@
+[package]
+name = "phantom"
+version = "0.1.0"
+edition = "2021"
+description = "Core library and CLI for the Tecware Phantom S (VID 379a PID 0920)"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+hidapi = { version = "2", default-features = false, features = ["linux-shared-hidraw"] }
+image = "0.25"
+gif = "0.14.2"
+serde_json = "1"
+libc = "0.2"
+
+[lib]
+name = "phantom"
+path = "src/lib.rs"
+
+[[bin]]
+name = "phantom"
+path = "src/main.rs"
