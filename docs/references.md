@@ -59,14 +59,17 @@ Mappings produced during the work:
 - mingw-w64 cross compiler: <https://www.mingw-w64.org/>
 - ImageMagick (used by the Python reference for image/GIF conversion):
   <https://imagemagick.org/>
-- `mpv` / `ffplay` (audio playback in the Bad Apple animation):
+- `ffmpeg` (converting video to the player's PPM frame sequence):
+  <https://ffmpeg.org/>
+- `mpv` / `ffplay` (audio playback for the video player):
   <https://mpv.io/>, <https://ffmpeg.org/>
 
 ## Media
 
-- Bad Apple frames and audio are not distributed with this repository. The
-  animation binary reads a local PGM sequence (480x360, 30 fps) and any audio
-  file supported by `mpv` or `ffplay`.
+- Video frames and audio are not distributed with this repository. The player
+  reads a local PPM (`P6`) sequence and any audio file supported by `mpv` or
+  `ffplay`. The first video used was Bad Apple (480x360, 30 fps), but the
+  player is general.
 
 ## Legal
 

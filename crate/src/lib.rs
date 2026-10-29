@@ -16,8 +16,9 @@ pub const PACKET: usize = 64;
 pub const HEADER: usize = 7; // cmd, addr lo/hi, len, csum lo/hi, result
 pub const CAPACITY: usize = PACKET - 1 - HEADER;
 pub const AREA: usize = 128;
-pub const MATRIX_COUNT: usize = 392;      // custom-light LEDs
-pub const MATRIX_ENTRY: usize = 3;        // RGB888 per LED
+pub const MATRIX_COUNT: usize = 392; // custom-light LEDs
+pub const MATRIX_ENTRY: usize = 3; // RGB888 per LED
+pub const MATRIX_ENTRIES: usize = MATRIX_COUNT * MATRIX_ENTRY;
 pub const KEYMAP_ENTRIES: usize = 128;
 pub const FNLOCK_SIZE: usize = 256;
 pub const MACRO_SIZE: usize = 2048;
@@ -91,8 +92,8 @@ impl Mode {
     pub fn name(id: u8) -> &'static str {
         use Mode::*;
         [
-            Wave, Cloud, Neon, Vortex, Flower, Fly, Flow, Rain, Mixcolor, Breathe, Static,
-            Ripple, Click, Reaction, Speed, Scan, Change, Custom, Off,
+            Wave, Cloud, Neon, Vortex, Flower, Fly, Flow, Rain, Mixcolor, Breathe, Static, Ripple,
+            Click, Reaction, Speed, Scan, Change, Custom, Off,
         ]
         .into_iter()
         .find(|m| m.id() == id)
@@ -211,15 +212,17 @@ pub fn parse_key(s: &str) -> Result<(usize, (u8, u8, u8))> {
 }
 
 pub struct Layout {
-    pub pos: Vec<Option<(f64, f64)>>,   // normalised to the key bounding box
+    pub pos: Vec<Option<(f64, f64)>>, // normalised to the key bounding box
 }
 
 impl Layout {
     pub fn load(mapping: &str, keymap: &str) -> Result<Self> {
-        let m: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(mapping).with_context(|| format!("read {mapping}"))?)?;
-        let k: serde_json::Value =
-            serde_json::from_str(&fs::read_to_string(keymap).with_context(|| format!("read {keymap}"))?)?;
+        let m: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(mapping).with_context(|| format!("read {mapping}"))?,
+        )?;
+        let k: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(keymap).with_context(|| format!("read {keymap}"))?,
+        )?;
         let keys = k
             .get("keys")
             .and_then(|v| v.as_object())
@@ -249,7 +252,11 @@ impl Layout {
                 }
                 if let Some(xy) = keys.get(&name).and_then(|v| v.as_array()) {
                     if xy.len() >= 2 {
-                        raw.push((idx, xy[0].as_f64().unwrap_or(0.0), xy[1].as_f64().unwrap_or(0.0)));
+                        raw.push((
+                            idx,
+                            xy[0].as_f64().unwrap_or(0.0),
+                            xy[1].as_f64().unwrap_or(0.0),
+                        ));
                     }
                 }
             }
@@ -260,8 +267,10 @@ impl Layout {
         let (mut minx, mut maxx) = (f64::MAX, f64::MIN);
         let (mut miny, mut maxy) = (f64::MAX, f64::MIN);
         for (_, x, y) in &raw {
-            minx = minx.min(*x); maxx = maxx.max(*x);
-            miny = miny.min(*y); maxy = maxy.max(*y);
+            minx = minx.min(*x);
+            maxx = maxx.max(*x);
+            miny = miny.min(*y);
+            maxy = maxy.max(*y);
         }
         let sx = (maxx - minx).max(1e-9);
         let sy = (maxy - miny).max(1e-9);
@@ -307,11 +316,7 @@ impl Phantom {
         b[3] = (addr >> 8) as u8;
         b[4] = data.len() as u8;
         b[8..8 + data.len()].copy_from_slice(data);
-        let sum: u16 = b[1..5]
-            .iter()
-            .chain(b[7..].iter())
-            .map(|&x| x as u16)
-            .sum();
+        let sum: u16 = b[1..5].iter().chain(b[7..].iter()).map(|&x| x as u16).sum();
         b[5] = (sum & 0xff) as u8;
         b[6] = (sum >> 8) as u8;
         b
@@ -385,10 +390,10 @@ impl Phantom {
             a[4] = d & 0x07;
         }
         if rainbow {
-            a[5] = 1;             // built-in 7-colour cycle (preset effects only)
+            a[5] = 1; // built-in 7-colour cycle (preset effects only)
         }
         if let Some((r, g, b)) = color {
-            a[5] = 0;             // single colour
+            a[5] = 0; // single colour
             a[6] = r;
             a[7] = g;
             a[8] = b;
@@ -449,14 +454,19 @@ impl Phantom {
             while run_end < m.len() {
                 let e = (run_end + MATRIX_ENTRY).min(m.len());
                 if m[run_end..e] != prev[run_end..e]
-                    && run_end - run_start + MATRIX_ENTRY <= (CAPACITY / MATRIX_ENTRY) * MATRIX_ENTRY
+                    && run_end - run_start + MATRIX_ENTRY
+                        <= (CAPACITY / MATRIX_ENTRY) * MATRIX_ENTRY
                 {
                     run_end = e;
                 } else {
                     break;
                 }
             }
-            self.dev.write(&Self::packet(0x1A, &m[run_start..run_end], run_start as u16))?;
+            self.dev.write(&Self::packet(
+                0x1A,
+                &m[run_start..run_end],
+                run_start as u16,
+            ))?;
             if !delay.is_zero() {
                 sleep(delay);
             }
@@ -470,7 +480,11 @@ impl Phantom {
         for &b in data {
             crc ^= b as u16;
             for _ in 0..8 {
-                crc = if crc & 1 != 0 { (crc >> 1) ^ 0xA001 } else { crc >> 1 };
+                crc = if crc & 1 != 0 {
+                    (crc >> 1) ^ 0xA001
+                } else {
+                    crc >> 1
+                };
             }
         }
         crc
@@ -480,12 +494,25 @@ impl Phantom {
         let n = declared.unwrap_or(data.len()) as u16;
         let head = [pkt, (n >> 8) as u8, (n & 0xff) as u8];
         let crc = Self::crc16(&head);
-        let mut out = vec![0xA5, 0x5A, head[0], head[1], head[2], (crc >> 8) as u8, crc as u8];
+        let mut out = vec![
+            0xA5,
+            0x5A,
+            head[0],
+            head[1],
+            head[2],
+            (crc >> 8) as u8,
+            crc as u8,
+        ];
         out.extend_from_slice(data);
         out
     }
 
-    pub fn screen_send(&self, opened: &mut bool, payload: &[u8], repeat: Option<&[u8]>) -> Result<()> {
+    pub fn screen_send(
+        &self,
+        opened: &mut bool,
+        payload: &[u8],
+        repeat: Option<&[u8]>,
+    ) -> Result<()> {
         let cap = CAPACITY - repeat.map_or(0, |r| r.len());
         let mut addr = 0usize;
         while addr < payload.len() {
@@ -597,8 +624,6 @@ impl Phantom {
     }
 }
 
-
-
 impl Phantom {
     /// Write the whole matrix without waiting for replies (animation path).
     pub fn write_matrix_fast(&self, m: &[u8], delay: Duration) -> Result<()> {
@@ -681,10 +706,16 @@ pub fn load_gif(path: &str, w: u32, h: u32) -> Result<Vec<Vec<u8>>> {
     let mut decoder = opts.read_info(file)?;
     let mut frames = Vec::new();
     while let Some(frame) = decoder.read_next_frame()? {
-        let rgba = image::RgbaImage::from_raw(frame.width as u32, frame.height as u32, frame.buffer.to_vec())
-            .ok_or_else(|| anyhow!("bad gif frame"))?;
+        let rgba = image::RgbaImage::from_raw(
+            frame.width as u32,
+            frame.height as u32,
+            frame.buffer.to_vec(),
+        )
+        .ok_or_else(|| anyhow!("bad gif frame"))?;
         let resized = image::imageops::resize(&rgba, w, h, image::imageops::FilterType::Lanczos3);
-        frames.push(to_rgb565(&image::DynamicImage::ImageRgba8(resized).to_rgb8()));
+        frames.push(to_rgb565(
+            &image::DynamicImage::ImageRgba8(resized).to_rgb8(),
+        ));
     }
     Ok(frames)
 }

@@ -128,8 +128,8 @@ The working strategy is **delta writes**:
 4. Send one raw `0x1A` packet per run, with about 1 ms between packets.
 5. Pace frames at roughly 20-30 fps.
 
-For Bad Apple most frames change only a handful of LEDs, so this is far
-cheaper and smoother than rewriting 1176 bytes. The CLI/core library exposes
+For video most frames change only a handful of LEDs, so this is far cheaper
+and smoother than rewriting 1176 bytes (this was first proven with Bad Apple). The CLI/core library exposes
 `write_delta` for this; `write_matrix_fast` writes full frames without waiting
 for acknowledgements.
 
@@ -162,6 +162,6 @@ dev.enter_custom(level)?;
 dev.restore(&before)?;          // exact previous mode, colour, timers, matrix
 ```
 
-This is why `sweep` and `badapple` return the board to whatever was there
+This is why `sweep` and `video` return the board to whatever was there
 before instead of leaving a green wave. They install a Ctrl-C handler so the
 restore also happens on interrupt.

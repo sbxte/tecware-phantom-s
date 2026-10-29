@@ -18,7 +18,7 @@ inferred rather than confirmed it is marked **inferred**.
 | [tft.md](tft.md) | the 128x128 screen: transport, packet CRC, image/GIF upload, clock |
 | [keymap.md](keymap.md) | keymap layers, FN-lock list, macro region, profile, battery |
 | [wine.md](wine.md) | running the vendor application under Wine via a `hidapi.dll` shim |
-| [mapping.md](mapping.md) | LED-index mapping, photo XY mapping, Bad Apple and sweep pipelines |
+| [mapping.md](mapping.md) | LED-index mapping, photo XY mapping, PPM video player and sweep pipelines |
 | [history.md](history.md) | how the protocol was cracked, wrong turns, comparison with other projects |
 | [references.md](references.md) | vendor files, SDKs, projects and specifications used |
 | [legal.md](legal.md) | scope, EULA/RE notes, trademarks, what is not distributed |

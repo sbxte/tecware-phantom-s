@@ -15,4 +15,9 @@ program_files_x86/
 *.rar
 *.7z
 *.pgm
+*.ppm
+*.mp4
+*.mkv
+*.wav
+*.ogg
 *.mp3

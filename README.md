@@ -13,7 +13,7 @@ export PATH="$PWD/target/release:$PATH"
 phantom status
 phantom light --mode wave --color ff0000 --level 4
 sweep --seconds 60
-badapple --start 1 --end 900
+video --frames ./frames --fps 30      # play output_1.ppm, output_2.ppm, ...
 ```
 
 Run from the repo root so `mapping_custom.json` and `keymap_xy.json` resolve.

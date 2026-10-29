@@ -94,43 +94,79 @@ takes the key name from `mapping_custom.json`, looks up `(x, y)` in
 to its own bounding box. That gives every lit slot an `(x, y)` in 0-1 without
 depending on the photo's crop.
 
-## Bad Apple
+## Video player (PPM)
 
-`anim/badapple` renders the video onto the keys.
+`anim/video` is a general player for a PPM frame sequence. Each LED takes the
+colour of the pixel at its key position, so the keyboard shows a coarse,
+full-colour version of the source video.
+
+It was originally written to play Bad Apple on the board; that video is still
+the largest thing it has been used for, but nothing in the player is specific
+to it.
 
 Inputs:
 
-- PGM frames: 480x360 binary P5, 8-bit, 6572 frames at 30 fps (about 219 s)
-- audio: any file `mpv`/`ffplay` can play
+- frames: a directory of binary PPM (`P6`, 8-bit, maxval 255) files named
+  `output_1.ppm`, `output_2.ppm`, ... (1-based, no zero padding)
+- audio: optional; any file `mpv` or `ffplay` can play
 - the same `mapping_custom.json` + `keymap_xy.json`
 
-Defaults are built from `$HOME/Programming/contrib/badapple/`; override with
-`--frames`/`--audio` or `BADAPPLE_FRAMES`/`BADAPPLE_AUDIO`.
+Frame and audio paths come from `--frames`/`--audio` or the `VID_FRAMES` /
+`VID_AUDIO` environment variables. Audio can be disabled with `--no-audio`.
 
-Rendering:
+```bash
+# a directory of frames, 30 fps, until the last existing frame
+video --frames ./frames --fps 30
 
-1. Load the PGM header (`P5`, width, height, maxval 255) and pixels.
-2. For each mapped LED, convert its normalised `(x, y)` to a pixel coordinate
-   in the frame.
-3. The pixel is lit if its value is `>= --threshold` (default 128); `--invert`
-   flips black/white.
-4. Lit slots are white `ff ff ff`; everything else is black.
+# a segment with audio
+video --frames ./frames --audio ./soundtrack.mp3 --fps 30 --start 300 --end 600
 
-Playback:
+# hold one frame until Enter, then restore
+video --frames ./frames --frame 120
+```
 
-- Audio starts at `(start - 1) / 30` seconds via `mpv --no-video` or
+Any video can be turned into this form with ffmpeg (the output pattern matches
+the player's naming):
+
+```bash
+mkdir -p frames
+ffmpeg -i input.mp4 -vf "scale=480:360" frames/output_%d.ppm
+```
+
+### Rendering
+
+1. Load the PPM header (`P6`, width, height, maxval 255) and its RGB pixels.
+2. For each mapped LED, convert its normalised `(x, y)` to a pixel coordinate.
+3. Copy that pixel's RGB value directly into the LED slot.
+
+Unlike the old black/white threshold pipeline, the player now uses the actual
+frame colours. The keyboard is a low-resolution sampler: 81 sampled points,
+not an image.
+
+### Playback
+
+- The whole sequence is pre-rendered into memory before playback starts
+  (392 x 3 bytes per frame; about 7.7 MB for a 6572-frame video).
+- Audio starts at `(start - 1) / fps` seconds via `mpv --no-video` or
   `ffplay -nodisp`.
 - Frames are timed against `Instant`, not against render cost.
-- If rendering falls more than 150 ms behind, frames are skipped to keep audio
+- If playback falls more than 150 ms behind, frames are skipped to keep audio
   sync (`n = start + now * fps`).
-- First frame is a full matrix write; the rest are delta writes (changed LEDs
-  only), paced by `--packet-delay` (1 ms default).
-- `--mode full` forces full-frame writes.
-- `--every N` renders every Nth frame while keeping the 30 fps time base.
-- `--dry-run` computes output without touching the device; `--frame N
-  --dry-run` reports the lit-LED count for one frame.
+- The first frame is a full matrix write; the rest use delta writes (changed
+  LEDs only), paced by `--packet-delay` (1 ms default).
+- `--mode full` forces full-frame writes; `--every N` renders every Nth frame
+  while keeping the time base.
+- `--level`, `--mapping` and `--keymap` match the other tools.
 - Before starting it snapshots the device; on exit or Ctrl-C it restores the
   exact previous area and matrix.
+
+### History
+
+The original use was Bad Apple: 480x360 frames at 30 fps (6572 frames, about
+219 seconds), sampled onto the mapped keys. That first version used PGM (P5)
+greyscale frames with a threshold and produced white-on-black silhouettes.
+It was later generalised to PPM and full colour, which is why the player lives
+in `anim/video` rather than a Bad Apple-specific crate.
 
 ## Sweep
 
@@ -147,7 +183,7 @@ Playback:
 - A full matrix is 21 packets. Each packet can cause a partial panel update,
   so full-frame animation tears.
 - Delta writes reduce each frame to the changed LEDs, usually 1-3 packets for
-  Bad Apple.
+  video frames.
 - Runs are capped at 54 bytes and aligned to whole LEDs so the firmware reads
   complete RGB triples.
 - About 1 ms between packets is the practical minimum for smooth output at

@@ -27,7 +27,7 @@ It does **not**:
 | original vendor `hidapi.dll` | not included (only an independently written replacement is built) |
 | firmware images | not included |
 | vendor `Config.json`, `LedInfo.xml`, layout XMLs | not included; read from your own installation |
-| Bad Apple frames/audio | not included |
+| video frames/audio (including any Bad Apple copy) | not included |
 | photos used for XY mapping | not included (only the resulting coordinates) |
 | generated device state and mappings | included; these are data produced by the tools |
 
@@ -112,9 +112,9 @@ the vendor. Do not use vendor logos or imply endorsement.
 
 ## Media rights
 
-Bad Apple!! and its video/audio are the property of their rightsholders. No
-frames or audio are distributed. The animation binary reads a local copy you
-provide.
+Bad Apple!! and any other video or audio used with the player are the property
+of their rightsholders. No frames or audio are distributed. The player reads a
+local copy you provide.
 
 ## Risk and warranty
 
@@ -134,7 +134,7 @@ trademarks or third-party media, and does not resolve any EULA question.
 ## Practical checklist before publishing
 
 - No vendor binaries, firmware, DLLs or XML/config files in the tree.
-- No Bad Apple media or source photos.
+- No video/audio media or source photos.
 - `docs/legal.md` kept with the project.
 - A project `LICENSE` chosen and added.
 - Keep the hidapi attribution in `bridge/` if the shim is redistributed.

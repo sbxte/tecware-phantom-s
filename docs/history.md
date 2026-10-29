@@ -72,9 +72,10 @@ the first 56 bytes of the 128-byte function area, and it sends zeroed timers.
 
 LED-to-key mapping was done by lighting one slot at a time and prompting for
 the key. Spatial mapping was done from a photo in a browser clicker, then row
-snapped. Bad Apple used the resulting XY map to sample PGM frames. Naive full
-frame writes tore badly; delta writes (changed LEDs only, ~1 ms apart) made it
-smooth.
+snapped. The result was first used to play Bad Apple, sampling PGM frames onto
+the keys. Naive full-frame writes tore badly; delta writes (changed LEDs only,
+~1 ms apart) made it smooth. That player was later generalised to full-colour
+PPM sequences and renamed `anim/video`.
 
 ## Wrong turns worth recording
 
